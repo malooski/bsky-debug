@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 // using node-style package resolution in a CSS file:
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
-import "normalize.css";
+import "normalize.css/normalize.css";
 
 import "./styles/output.css";
 import "./styles/global.css";

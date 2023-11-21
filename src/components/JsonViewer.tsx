@@ -1,4 +1,4 @@
-import { Tag } from "@blueprintjs/core";
+import { Callout, Tag } from "@blueprintjs/core";
 import style from "./JsonView.module.css";
 import { Link } from "@tanstack/react-router";
 
@@ -51,12 +51,12 @@ export default function JsonViewer(props: JsonViewerProps) {
 
     const parts = parseParts(jsonText);
 
-    console.log("parts", parts);
-
     return (
-        <div className="shadow-md overflow-auto p-3 m-3">
-            <pre>{renderParts(parts)}</pre>
-        </div>
+        <Callout className="text-xs flex">
+            <div className="overflow-auto">
+                <pre className="overflow-auto">{renderParts(parts)}</pre>
+            </div>
+        </Callout>
     );
 }
 
@@ -68,7 +68,6 @@ function replaceMatchesWithParts(
     const results: Part[] = [];
     for (const part of parts) {
         if (part.type !== "string") {
-            console.log("not string", part);
             results.push(part);
             continue;
         }
