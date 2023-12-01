@@ -1,58 +1,68 @@
 import { autorun, makeAutoObservable } from "mobx";
 import { LocalStorageModel } from "./local_storage";
-import { Classes } from "@blueprintjs/core";
+import { DARK_THEME, LIGHT_THEME } from "../styles/theme";
+
+export enum ThemeKey {
+    DARK = "dark",
+    LIGHT = "light",
+}
 
 export enum ThemeSetting {
     SYSTEM = "system",
-    LIGHT = "light",
     DARK = "dark",
-}
-
-export enum Theme {
     LIGHT = "light",
-    DARK = "dark",
 }
 
 export class ThemeModel {
-    systemTheme: Theme;
-
-    themeSetting = new LocalStorageModel<ThemeSetting>({
-        key: "debugapp_themesetting",
+    setting = new LocalStorageModel<ThemeSetting>({
+        key: "debugapp_theme",
         defaultValue: ThemeSetting.SYSTEM,
     });
+
+    systemTheme: ThemeKey;
 
     constructor() {
         makeAutoObservable(this);
 
-        const darkModeMq = window.matchMedia("(prefers-color-scheme: dark)");
-        this.systemTheme = darkModeMq.matches ? Theme.DARK : Theme.LIGHT;
+        const themeMq = window.matchMedia("(prefers-color-scheme: dark)");
+        this.systemTheme = themeMq.matches ? ThemeKey.DARK : ThemeKey.LIGHT;
 
-        darkModeMq.addEventListener("change", e => {
-            this.systemTheme = e.matches ? Theme.DARK : Theme.LIGHT;
+        themeMq.addEventListener("change", e => {
+            this.systemTheme = e.matches ? ThemeKey.DARK : ThemeKey.LIGHT;
         });
 
         autorun(() => {
-            if (this.theme == Theme.LIGHT) {
-                document.documentElement.classList.remove("dark", Classes.DARK);
-                document.body.classList.remove("dark", Classes.DARK);
+            const html = document.documentElement;
+            if (this.themeKey === ThemeKey.LIGHT) {
+                html.classList.add(ThemeKey.LIGHT);
+                html.classList.remove(ThemeKey.DARK);
             } else {
-                document.documentElement.classList.add("dark", Classes.DARK);
-                document.body.classList.add("dark", Classes.DARK);
+                html.classList.add(ThemeKey.DARK);
+                html.classList.remove(ThemeKey.LIGHT);
             }
         });
     }
 
-    get theme(): Theme {
-        if (this.themeSetting.value === ThemeSetting.SYSTEM) {
+    get themeKey(): ThemeKey {
+        if (this.setting.value === ThemeSetting.SYSTEM) {
             return this.systemTheme;
         }
 
-        return this.themeSetting.value === ThemeSetting.LIGHT ? Theme.LIGHT : Theme.DARK;
+        return this.setting.value === ThemeSetting.DARK ? ThemeKey.DARK : ThemeKey.LIGHT;
     }
 
-    setThemeSetting(setting: ThemeSetting) {
-        this.themeSetting.set(setting);
+    get theme() {
+        return this.themeKey === ThemeKey.DARK ? DARK_THEME : LIGHT_THEME;
+    }
+
+    setSetting(setting: ThemeSetting) {
+        if (!Object.values(ThemeSetting).includes(setting)) {
+            console.error("Invalid theme setting:", setting);
+            return;
+        }
+
+        this.setting.set(setting);
     }
 }
 
-export const THEME_MODEL = new ThemeModel();
+export const THEME_STORE = new ThemeModel();

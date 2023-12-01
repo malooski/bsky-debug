@@ -1,25 +1,44 @@
-import { Alignment, Navbar as BpNavbar, Classes } from "@blueprintjs/core";
 import { Link } from "@tanstack/react-router";
-import classNames from "classnames";
 import { observer } from "mobx-react";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeSelect } from "./ThemeSelect";
+import styled from "styled-components";
 
-const navButtonClass = classNames(Classes.BUTTON, Classes.MINIMAL);
+const RootDiv = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+`;
+
+const LeftSideDiv = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 1rem;
+`;
+
+const NavLink = styled(Link)`
+    padding: 0.5rem 1rem;
+
+    border: 1px solid ${p => p.theme.colors.accent};
+    border-radius: 0.25rem;
+
+    &[data-status="active"] {
+        background-color: ${p => p.theme.colors.primary};
+        color: ${p => p.theme.colors.text};
+    }
+`;
 
 export const Navbar = observer(() => {
     return (
-        <BpNavbar>
-            <BpNavbar.Group align={Alignment.LEFT}>
-                <BpNavbar.Heading>Bsky Debug</BpNavbar.Heading>
-                <BpNavbar.Divider />
-                <Link to="/" className={navButtonClass}>
-                    Home
-                </Link>
-            </BpNavbar.Group>
+        <RootDiv>
+            <LeftSideDiv>
+                <NavLink to="/">Home</NavLink>
 
-            <BpNavbar.Group align={Alignment.RIGHT}>
-                <ThemeToggle />
-            </BpNavbar.Group>
-        </BpNavbar>
+                <NavLink to="/profile">Profile</NavLink>
+            </LeftSideDiv>
+
+            <ThemeSelect />
+        </RootDiv>
     );
 });

@@ -3,9 +3,8 @@ import { LoginPage } from "./pages/login";
 import RootLayout from "./layouts/root";
 import { HomePage } from "./pages/home";
 import { AUTH_MODEL } from "./models/auth";
-import { ProfilePage } from "./pages/profile";
+import { MyProfilePage, ProfileByDidPage, ProfilePage } from "./pages/profile";
 import { LogoutPage } from "./pages/logout";
-import { PostPage } from "./pages/post";
 // Create a root route
 const rootRoute = new RootRoute({
     component: RootLayout,
@@ -34,43 +33,39 @@ const indexRoute = new Route({
 const loginRoute = new Route({
     id: "login",
     getParentRoute: () => rootRoute,
-    path: "/login",
+    path: "login",
     component: LoginPage,
 });
 
 const logoutRoute = new Route({
     id: "logout",
     getParentRoute: () => rootRoute,
-    path: "/logout",
+    path: "logout",
     component: LogoutPage,
 });
 
-// Create an index route
-const profileByDidRoute = new Route({
+const profileRoute = new Route({
     getParentRoute: () => rootRoute,
-    path: "/profile/$did",
-    id: "profileById",
-    parseParams: params => {
-        return {
-            did: params.did,
-        };
-    },
-    component: ProfilePage,
+    path: "profile",
+});
+
+const myProfileRoute = new Route({
+    getParentRoute: () => profileRoute,
+    path: "/",
+    id: "myProfile",
+    component: MyProfilePage,
     beforeLoad: async () => {
         await requireLogin();
     },
 });
 
-const postRoute = new Route({
-    getParentRoute: () => rootRoute,
-    path: "/post/$cid",
-    id: "post",
-    parseParams: params => {
-        return {
-            cid: params.cid,
-        };
-    },
-    component: PostPage,
+// Create an index route
+const profileByDidRoute = new Route({
+    getParentRoute: () => profileRoute,
+    path: "$did",
+    id: "profileByDid",
+    component: ProfileByDidPage,
+
     beforeLoad: async () => {
         await requireLogin();
     },
@@ -80,9 +75,9 @@ const postRoute = new Route({
 const routeTree = rootRoute.addChildren([
     indexRoute,
     loginRoute,
-    profileByDidRoute,
+    profileRoute.addChildren([myProfileRoute, profileByDidRoute]),
+
     logoutRoute,
-    postRoute,
 ]);
 
 // Create the router using your route tree

@@ -1,14 +1,29 @@
 import { Outlet } from "@tanstack/react-router";
 import { Navbar } from "../partials/Navbar";
+import { RouterDevTools } from "../components/RouterDevTools";
+import { QueryDevTools } from "../components/QueryDevTools";
+import styled from "styled-components";
+
+const RootDiv = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+
+    align-self: center;
+
+    padding: 1rem;
+`;
 
 export default function RootLayout() {
     return (
-        <div>
-            <div className="flex flex-row gap-2">
-                <Navbar />
-            </div>
-            <hr />
+        <RootDiv>
+            <Navbar />
+
             <Outlet />
-        </div>
+
+            <QueryDevTools />
+            <RouterDevTools />
+        </RootDiv>
     );
 }

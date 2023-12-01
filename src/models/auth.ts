@@ -22,7 +22,10 @@ export class AuthModel {
 
     loggedIn = false;
 
-    bskyAgent?: BskyAgent;
+    bskyAgent = new BskyAgent({
+        service: "https://bsky.social",
+    });
+    myDid?: string;
 
     constructor() {
         makeAutoObservable(this, {
@@ -38,31 +41,30 @@ export class AuthModel {
         }
 
         try {
-            const agent = new BskyAgent({
-                service: "https://bsky.social",
-            });
-
             if (this.session.value) {
                 console.log("Resuming session...");
-                await agent.resumeSession(this.session.value);
+                const sess = await this.bskyAgent.resumeSession(this.session.value);
+
+                this.myDid = sess.data.did;
             } else {
                 console.log("Logging in...");
-                await agent.login({
+                const resp = await this.bskyAgent.login({
                     identifier: this.username.value,
                     password: this.password.value,
                 });
 
-                this.session.set(agent.session);
+                this.myDid = resp.data.did;
+
+                this.session.set(this.bskyAgent.session);
             }
 
-            this.bskyAgent = agent;
             this.loggedIn = true;
             console.log("Logged in!");
         } catch (e) {
             console.log("Failed to log in!");
             this.loggedIn = false;
-            this.bskyAgent = undefined;
             this.session.set(undefined);
+            this.myDid = undefined;
         }
 
         return this.loggedIn;
@@ -70,6 +72,7 @@ export class AuthModel {
 
     async logout() {
         this.loggedIn = false;
+        this.myDid = undefined;
         this.session.clear();
         this.username.clear();
         this.password.clear();
