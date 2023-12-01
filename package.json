@@ -2,10 +2,14 @@
     "name": "bsky-debug",
     "version": "1.0.0",
     "description": "",
+    "type": "module",
     "main": "index.js",
     "scripts": {
         "dev": "run-p dev:*",
-        "dev:vite": "vite"
+        "dev:vite": "vite",
+        "build": "run-p build:*",
+        "build:vite": "vite build",
+        "preview": "vite preview"
     },
     "author": "",
     "license": "ISC",
@@ -20,6 +24,7 @@
         "eslint": "^8.53.0",
         "eslint-plugin-react-hooks": "^4.6.0",
         "eslint-plugin-react-refresh": "^0.4.4",
+        "http-server": "^14.1.1",
         "npm-run-all": "^4.1.5",
         "sass": "^1.69.5",
         "typescript": "^5.2.2",
