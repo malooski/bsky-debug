@@ -1,4 +1,4 @@
-import { RouterProvider } from "@tanstack/react-router";
+import { RouterProvider } from "react-router-dom";
 import ReactDOM from "react-dom/client";
 import { ThemeProvider } from "styled-components";
 

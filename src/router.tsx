@@ -1,91 +1,65 @@
-import { RootRoute, Route, Router, redirect } from "@tanstack/react-router";
-import { LoginPage } from "./pages/login";
+import { createHashRouter as createRouter, redirect } from "react-router-dom";
 import RootLayout from "./layouts/root";
-import { HomePage } from "./pages/home";
 import { AUTH_MODEL } from "./models/auth";
-import { MyProfilePage, ProfileByDidPage, ProfilePage } from "./pages/profile";
+import { DashboardPage } from "./pages/dashboard";
+import { HomePage } from "./pages/home";
+import { LoginPage } from "./pages/login";
 import { LogoutPage } from "./pages/logout";
-// Create a root route
-const rootRoute = new RootRoute({
-    component: RootLayout,
-});
+import { ProfilePage } from "./pages/profile";
 
-async function requireLogin() {
-    if (!(await AUTH_MODEL.checkLogin())) {
-        throw redirect({
-            to: "/login",
-        });
-    }
-}
+export const router = createRouter([
+    {
+        element: <RootLayout />,
+        children: [
+            {
+                path: "/",
+                element: <HomePage />,
+            },
+            {
+                path: "/login",
+                element: <LoginPage />,
+            },
+            {
+                path: "/logout",
+                element: <LogoutPage />,
+            },
 
-// Create an index route
-const indexRoute = new Route({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    id: "index",
-    component: HomePage,
-    beforeLoad: async () => {
-        await requireLogin();
+            {
+                path: "/dashboard",
+                element: <DashboardPage />,
+                loader: requireAuthLoader,
+            },
+
+            {
+                path: "/profile",
+                element: <ProfilePage />,
+                loader: requireAuthLoader,
+            },
+            {
+                path: "/profile/:did",
+                element: <ProfilePage />,
+                loader: requireAuthLoader,
+            },
+        ],
     },
-});
-
-// Create an index route
-const loginRoute = new Route({
-    id: "login",
-    getParentRoute: () => rootRoute,
-    path: "login",
-    component: LoginPage,
-});
-
-const logoutRoute = new Route({
-    id: "logout",
-    getParentRoute: () => rootRoute,
-    path: "logout",
-    component: LogoutPage,
-});
-
-const profileRoute = new Route({
-    getParentRoute: () => rootRoute,
-    path: "profile",
-});
-
-const myProfileRoute = new Route({
-    getParentRoute: () => profileRoute,
-    path: "/",
-    id: "myProfile",
-    component: MyProfilePage,
-    beforeLoad: async () => {
-        await requireLogin();
-    },
-});
-
-// Create an index route
-const profileByDidRoute = new Route({
-    getParentRoute: () => profileRoute,
-    path: "$did",
-    id: "profileByDid",
-    component: ProfileByDidPage,
-
-    beforeLoad: async () => {
-        await requireLogin();
-    },
-});
-
-// Create the route tree using your routes
-const routeTree = rootRoute.addChildren([
-    indexRoute,
-    loginRoute,
-    profileRoute.addChildren([myProfileRoute, profileByDidRoute]),
-
-    logoutRoute,
 ]);
 
-// Create the router using your route tree
-export const router = new Router({ routeTree });
+async function requireAuthLoader() {
+    if (!AUTH_MODEL.loggedInContext) {
+        console.log("no auth context, redirecting to login");
+        try {
+            console.log("checking auth");
+            await AUTH_MODEL.check();
+            return null;
+        } catch (e) {
+            console.error(e);
+        }
 
-// Register your router for maximum type safety
-declare module "@tanstack/react-router" {
-    interface Register {
-        router: typeof router;
+        const params = new URLSearchParams();
+        params.set("from", location.pathname);
+        return redirect(`/login?${params.toString()}`);
     }
+
+    console.log("auth context exists, continuing");
+    return null;
 }

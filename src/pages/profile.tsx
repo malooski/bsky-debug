@@ -1,11 +1,12 @@
-import { Box, Tabs } from "@radix-ui/themes";
-import { useQuery } from "@tanstack/react-query";
-import { Navigate, useParams } from "@tanstack/react-router";
+import { Box, Button, Tabs } from "@radix-ui/themes";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react";
 import { FeedViewPostCard } from "../components/FeedViewPost";
 import { UserCard } from "../components/UserCard";
 import { AUTH_MODEL } from "../models/auth";
 import styled from "styled-components";
+import { Navigate, useParams } from "react-router-dom";
+import { Fragment } from "react";
 
 const RootDiv = styled.div({
     display: "flex",
@@ -14,21 +15,19 @@ const RootDiv = styled.div({
     gap: "1rem",
 });
 
-export const ProfileByDidPage = observer(() => {
-    const params = useParams({ from: "/profile/profileByDid" });
-    return <BaseProfilePage did={params.did} />;
-});
+const ContentListDiv = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+`;
 
-export const MyProfilePage = observer(() => {
-    if (!AUTH_MODEL.myDid) {
-        return <Navigate to="/login" />;
+export const ProfilePage = observer(() => {
+    const params = useParams();
+    const did = params.did ?? AUTH_MODEL.loggedInContext?.did;
+
+    if (!did) {
+        return <Navigate to="/dashboard" />;
     }
-
-    return <BaseProfilePage did={AUTH_MODEL.myDid} />;
-});
-
-export const BaseProfilePage = observer((props: { did: string }) => {
-    const { did } = props;
 
     const userQuery = useQuery({
         queryKey: ["getUserProfile", did],
@@ -80,17 +79,31 @@ export const BaseProfilePage = observer((props: { did: string }) => {
 const AuthorFeedContent = observer((props: { did: string }) => {
     const { did } = props;
 
-    const feedQuery = useQuery({
+    const feedQuery = useInfiniteQuery({
         queryKey: ["authorFeedData", did],
-        queryFn: async () => AUTH_MODEL.bskyAgent.getAuthorFeed({ actor: did }),
+        initialPageParam: undefined as string | undefined,
+        queryFn: async ({ pageParam }) =>
+            AUTH_MODEL.bskyAgent.getAuthorFeed({ actor: did, cursor: pageParam, limit: 100 }),
+        getNextPageParam: lastPage => lastPage.data.cursor,
     });
 
     return (
-        <div className="flex flex-col gap-1">
-            {feedQuery.data?.data?.feed?.map?.(post => (
-                <FeedViewPostCard key={post.post.cid} post={post} />
+        <ContentListDiv>
+            {feedQuery.data?.pages?.map?.((group, groupIdx) => (
+                <Fragment key={groupIdx}>
+                    {group.data.feed.map((post, postIdx) => (
+                        <FeedViewPostCard key={`${groupIdx}_${postIdx}`} post={post} />
+                    ))}
+                </Fragment>
             ))}
-        </div>
+
+            <Button
+                disabled={feedQuery.isFetching || !feedQuery.hasNextPage}
+                onClick={() => feedQuery.fetchNextPage()}
+            >
+                {feedQuery.isFetching ? "Loading more..." : "Load more"}
+            </Button>
+        </ContentListDiv>
     );
 });
 
@@ -102,7 +115,7 @@ const FollowingContent = observer((props: { did: string }) => {
         queryFn: async () => AUTH_MODEL.bskyAgent?.getFollows({ actor: did, limit: 100 }),
     });
     return (
-        <div className="flex flex-col gap-1">
+        <ContentListDiv>
             {followingQuery.data?.data?.follows?.map?.(profile => (
                 <UserCard
                     key={profile.did}
@@ -113,7 +126,7 @@ const FollowingContent = observer((props: { did: string }) => {
                     json={profile}
                 />
             ))}
-        </div>
+        </ContentListDiv>
     );
 });
 
@@ -125,7 +138,7 @@ const FollowersContent = observer((props: { did: string }) => {
         queryFn: async () => AUTH_MODEL.bskyAgent?.getFollowers({ actor: did, limit: 100 }),
     });
     return (
-        <div className="flex flex-col gap-1">
+        <ContentListDiv>
             {followersQuery.data?.data?.followers?.map?.(profile => (
                 <UserCard
                     key={profile.did}
@@ -136,6 +149,6 @@ const FollowersContent = observer((props: { did: string }) => {
                     json={profile}
                 />
             ))}
-        </div>
+        </ContentListDiv>
     );
 });

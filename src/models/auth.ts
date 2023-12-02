@@ -1,31 +1,42 @@
 import { AtpSessionData, BskyAgent } from "@atproto/api";
 import { makeAutoObservable } from "mobx";
-import { DEFAULT_BSKY_IDENTIFIER, DEFAULT_BSKY_PASSWORD } from "../env";
 import { LocalStorageModel } from "./local_storage";
-import { useNavigate } from "@tanstack/react-router";
+
+interface ILoggedInContext {
+    isLoggedIn: true;
+    username: string;
+    did: string;
+}
+
+export class LoggedInContext {
+    isLoggedIn: true;
+    username: string;
+    did: string;
+
+    constructor(args: ILoggedInContext) {
+        this.isLoggedIn = args.isLoggedIn;
+        this.username = args.username;
+        this.did = args.did;
+
+        makeAutoObservable(this);
+    }
+}
 
 export class AuthModel {
-    username = new LocalStorageModel<string>({
-        key: "debugapp_username",
-        defaultValue: DEFAULT_BSKY_IDENTIFIER,
-    });
-
-    password = new LocalStorageModel<string>({
-        key: "debugapp_password",
-        defaultValue: DEFAULT_BSKY_PASSWORD,
-    });
-
     session = new LocalStorageModel<AtpSessionData | undefined>({
         key: "debugapp_session",
         defaultValue: undefined,
     });
 
-    loggedIn = false;
-
     bskyAgent = new BskyAgent({
         service: "https://bsky.social",
+        persistSession: async (evt, sess) => {
+            console.log("Persisting session...");
+            await this.session.set(sess);
+        },
     });
-    myDid?: string;
+
+    loggedInContext?: LoggedInContext;
 
     constructor() {
         makeAutoObservable(this, {
@@ -33,57 +44,63 @@ export class AuthModel {
         });
     }
 
-    async checkLogin(force: boolean = false) {
-        if (!force) {
-            if (this.loggedIn && this.bskyAgent && this.bskyAgent.session) {
-                return true;
-            }
+    async check() {
+        const session = await this.session.value;
+        if (!session) {
+            throw new Error("No session found!");
         }
+
+        if (this.bskyAgent.hasSession) {
+            return;
+        }
+
+        const resumedResp = await this.bskyAgent.resumeSession(session);
+        if (!resumedResp.success) {
+            throw new Error("Failed to resume session!");
+        }
+
+        this.setLoggedInContext({
+            isLoggedIn: true,
+            username: resumedResp.data.handle,
+            did: resumedResp.data.did,
+        });
+    }
+
+    async login(username: string, password: string) {
+        this.session.set(undefined);
 
         try {
-            if (this.session.value) {
-                console.log("Resuming session...");
-                const sess = await this.bskyAgent.resumeSession(this.session.value);
+            const resp = await this.bskyAgent.login({
+                identifier: username,
+                password: password,
+            });
 
-                this.myDid = sess.data.did;
-            } else {
-                console.log("Logging in...");
-                const resp = await this.bskyAgent.login({
-                    identifier: this.username.value,
-                    password: this.password.value,
-                });
+            if (!resp.success) throw new Error("Failed to log in!");
 
-                this.myDid = resp.data.did;
-
-                this.session.set(this.bskyAgent.session);
-            }
-
-            this.loggedIn = true;
-            console.log("Logged in!");
+            this.setLoggedInContext({
+                isLoggedIn: true,
+                username: resp.data.handle,
+                did: resp.data.did,
+            });
         } catch (e) {
             console.log("Failed to log in!");
-            this.loggedIn = false;
-            this.session.set(undefined);
-            this.myDid = undefined;
+            throw e;
         }
+    }
 
-        return this.loggedIn;
+    setLoggedInContext(ctx: ILoggedInContext) {
+        this.loggedInContext = new LoggedInContext(ctx);
+    }
+
+    clearLoggedInContext() {
+        this.loggedInContext = undefined;
     }
 
     async logout() {
-        this.loggedIn = false;
-        this.myDid = undefined;
         this.session.clear();
-        this.username.clear();
-        this.password.clear();
+        this.clearLoggedInContext();
+        this.bskyAgent.session = undefined;
     }
 }
 
 export const AUTH_MODEL = new AuthModel();
-
-export function useRequireLogin() {
-    const navigate = useNavigate();
-    if (!AUTH_MODEL.loggedIn) {
-        navigate({ to: "/login" });
-    }
-}

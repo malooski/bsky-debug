@@ -124,6 +124,20 @@ const PostText = styled.div`
     word-wrap: break-word;
 `;
 
+const ReplyInfoDiv = styled(Card)`
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 1rem;
+
+    font-size: 0.75rem;
+
+    border: 1px solid ${p => p.theme.colors.primary};
+`;
+
 export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
     const { post } = props;
 
@@ -153,6 +167,29 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
                     </Text>
                 </RepostInfoDiv>
             );
+        }
+
+        return null;
+    }
+
+    function renderReply() {
+        const parent = post.reply?.parent;
+        if (AppBskyFeedDefs.isPostView(parent)) {
+            if (AppBskyFeedPost.isRecord(parent.record)) {
+                return (
+                    <ReplyInfoDiv>
+                        <UserCard
+                            minimal
+                            did={parent.author.did}
+                            handle={parent.author.handle}
+                            displayName={parent.author.displayName}
+                            avatar={parent.author.avatar}
+                            json={parent.author}
+                        />
+                        <PostText>{parent.record.text}</PostText>
+                    </ReplyInfoDiv>
+                );
+            }
         }
 
         return null;
@@ -263,6 +300,7 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
         return (
             <PostDiv>
                 {renderRepost()}
+                {renderReply()}
                 <UserCard
                     minimal
                     did={author.did}

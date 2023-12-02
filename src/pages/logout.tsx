@@ -1,23 +1,20 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react";
 import { AUTH_MODEL } from "../models/auth";
-import { useEffect } from "react";
+import { Navigate } from "react-router-dom";
+
 export const LogoutPage = observer(() => {
-    const navigate = useNavigate();
+    const logoutResp = useQuery({
+        queryKey: ["logout"],
+        queryFn: async () => {
+            await AUTH_MODEL.logout();
+            return true;
+        },
+    });
 
-    useEffect(() => {
-        AUTH_MODEL.logout();
+    if (logoutResp.isLoading) {
+        return <h1>Logging out...</h1>;
+    }
 
-        setTimeout(() => {
-            navigate({
-                to: "/",
-            });
-        }, 3000);
-    }, []);
-
-    return (
-        <div>
-            <h1>Logging out...</h1>
-        </div>
-    );
+    return <Navigate to="/login" replace={true} />;
 });

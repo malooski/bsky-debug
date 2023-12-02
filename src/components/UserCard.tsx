@@ -1,10 +1,10 @@
-import { Link1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Card, IconButton } from "@radix-ui/themes";
-import { Link, useNavigate } from "@tanstack/react-router";
 import { observer } from "mobx-react";
 import { useState } from "react";
-import { JsonViewer } from "./JsonViewer";
 import styled from "styled-components";
+import { Link, useNavigate } from "react-router-dom";
+import { Link1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { JsonViewer } from "./JsonViewer";
 
 interface UserCardProps {
     did: string;
@@ -77,9 +77,7 @@ export const UserCard = observer((props: UserCardProps) => {
         <RootDiv>
             <AvatarImg src={avatar ?? "#"} />
             <NameSpan>{displayName}</NameSpan>
-            <DidLink to="/profile/$did" params={{ did }}>
-                {did}
-            </DidLink>
+            <DidLink to={`/profile/${encodeURIComponent(did)}`}>{did}</DidLink>
             <HandleSpan>@{handle}</HandleSpan>
         </RootDiv>
     );
@@ -95,7 +93,7 @@ export const UserCard = observer((props: UserCardProps) => {
                     size="1"
                     variant="ghost"
                     title="Navigate to profile."
-                    onClick={() => navigate({ to: "/profile/$did", params: { did: did } })}
+                    onClick={() => navigate(`/profile/${encodeURIComponent(did)}`)}
                 >
                     <Link1Icon />
                 </IconButton>

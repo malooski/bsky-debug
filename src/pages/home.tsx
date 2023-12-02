@@ -1,42 +1,63 @@
-import { PersonIcon } from "@radix-ui/react-icons";
-import { Button, TextField } from "@radix-ui/themes";
-import { useQuery } from "@tanstack/react-query";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { observer } from "mobx-react";
-import { UserCard } from "../components/UserCard";
-import { AUTH_MODEL } from "../models/auth";
+import styled from "styled-components";
+import { GITHUB_REPO_URL } from "../env";
+
+const RootDiv = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+
+    align-self: center;
+
+    padding: 1rem;
+    gap: 1rem;
+`;
+
+const LinksDiv = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+
+    align-self: center;
+
+    padding: 1rem;
+    gap: 1rem;
+`;
 
 export const HomePage = observer(() => {
-    const userQuery = useQuery({
-        queryKey: ["user", AUTH_MODEL.myDid],
-        queryFn: async () => {
-            return AUTH_MODEL.bskyAgent.getProfile({
-                actor: AUTH_MODEL.myDid!,
-            });
-        },
-        enabled: !!AUTH_MODEL.myDid,
-    });
-
     return (
-        <div className="m-2 flex flex-col">
-            {userQuery.data && (
-                <UserCard
-                    did={userQuery.data.data.did}
-                    avatar={userQuery.data.data.avatar}
-                    handle={userQuery.data.data.handle}
-                    displayName={userQuery.data.data.displayName}
-                    json={userQuery.data.data}
-                />
-            )}
+        <RootDiv>
+            <h1>Welcome!</h1>
 
-            <div className="flex items-center gap-1">
-                <TextField.Root>
-                    <TextField.Slot>
-                        <PersonIcon />
-                    </TextField.Slot>
-                    <TextField.Input placeholder="Enter a profile DID" />
-                </TextField.Root>
-                <Button>Go</Button>
-            </div>
-        </div>
+            <h3>This is my Bluesky Debug client!</h3>
+
+            <p>
+                This app is a useful way to view posts and their underlying data to get an insight
+                into how to develop future applications.
+            </p>
+
+            <p>
+                Feel free to login and check it out. No data is sent to me. Session data is stored
+                in cookies & local storage.
+            </p>
+
+            <p>
+                If you encounter any issues, feel free to make an issue on GitHub or reach out to me
+                directly on BlueSky or in my Discord Server
+            </p>
+
+            <LinksDiv>
+                <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer">
+                    <GitHubLogoIcon /> View on GitHub
+                </a>
+
+                <a href="https://maloo.ski" target="_blank" rel="noreferrer">
+                    Find Malooski on the web!
+                </a>
+            </LinksDiv>
+        </RootDiv>
     );
 });

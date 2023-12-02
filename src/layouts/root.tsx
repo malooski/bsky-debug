@@ -1,8 +1,7 @@
-import { Outlet } from "@tanstack/react-router";
 import { Navbar } from "../partials/Navbar";
-import { RouterDevTools } from "../components/RouterDevTools";
 import { QueryDevTools } from "../components/QueryDevTools";
 import styled from "styled-components";
+import { Outlet } from "react-router-dom";
 
 const RootDiv = styled.div`
     display: flex;
@@ -13,17 +12,18 @@ const RootDiv = styled.div`
     align-self: center;
 
     padding: 1rem;
+    gap: 1rem;
 `;
 
 export default function RootLayout() {
     return (
-        <RootDiv>
-            <Navbar />
+        <>
+            <RootDiv>
+                <Navbar />
 
-            <Outlet />
-
+                <Outlet />
+            </RootDiv>
             <QueryDevTools />
-            <RouterDevTools />
-        </RootDiv>
+        </>
     );
 }
