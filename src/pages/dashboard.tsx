@@ -2,7 +2,7 @@ import { PersonIcon } from "@radix-ui/react-icons";
 import { Button, TextField } from "@radix-ui/themes";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react";
-import { UserCard } from "../components/UserCard";
+import { UserCard } from "../components/Profile";
 import { AUTH_MODEL } from "../models/auth";
 
 export const DashboardPage = observer(() => {

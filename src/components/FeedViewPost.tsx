@@ -4,25 +4,22 @@ import { observer } from "mobx-react";
 import { useState } from "react";
 
 import {
-    AppBskyFeedDefs,
+    AppBskyEmbedExternal,
     AppBskyEmbedImages,
     AppBskyEmbedRecord,
+    AppBskyFeedDefs,
     AppBskyFeedPost,
-    AppBskyEmbedExternal,
 } from "@atproto/api";
-import {
-    ChatBubbleIcon,
-    HeartFilledIcon,
-    LoopIcon,
-    MagnifyingGlassIcon,
-} from "@radix-ui/react-icons";
-import { Card, IconButton, Text } from "@radix-ui/themes";
+import { ChatBubbleIcon, HeartFilledIcon, LoopIcon } from "@radix-ui/react-icons";
+import { Button, Card, Text } from "@radix-ui/themes";
 
-import "highlight.js/styles/dark.css";
 import { formatDistanceToNow } from "date-fns";
-import { JsonViewer } from "./JsonViewer";
+import "highlight.js/styles/dark.css";
+import { Link } from "react-router-dom";
 import styled from "styled-components";
-import { UserCard } from "./UserCard";
+import { JsonViewer } from "./JsonViewer";
+import { ProfileView } from "./Profile";
+import { Flex } from "./common";
 
 interface FeedViewPostProps {
     post: FeedViewPost;
@@ -36,19 +33,18 @@ const FooterDiv = styled.div`
 `;
 
 const RootCard = styled(Card)`
-    position: relative;
-`;
-
-const ShowRawButton = styled(IconButton)`
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
+    display: flex;
+    flex-direction: column;
 `;
 
 const EmbedImg = styled.img`
+    width: 100%;
+    border-radius: 0.25rem;
+
     max-width: 500px;
     max-height: 500px;
-    border-radius: 0.25rem;
+
+    object-fit: contain;
 `;
 
 const PostDiv = styled.div`
@@ -78,36 +74,46 @@ const StatsDiv = styled.div`
     align-items: center;
 `;
 
-const QuotePostDiv = styled.div`
+const AvatarWithContentDiv = styled.div`
+    display: grid;
+    grid-template-columns: 5em 1fr;
+
+    gap: 0.5rem;
+`;
+
+const TransparentAvatarWithContentDiv = styled(AvatarWithContentDiv)`
+    opacity: 0.5;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    transition: opacity 0.5s;
+`;
+
+const QuotePostDiv = styled(Card)`
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 1rem;
-    margin: 1rem;
-    border-radius: 1rem;
-
-    border: 1px solid ${p => p.theme.colors.primary};
 `;
 
-const ExternalEmbedDiv = styled.div`
+const ExternalEmbedDiv = styled(Card)`
     display: grid;
     grid:
-        "thumb title" auto
-        "thumb desc" auto
-        / auto 1fr;
-
-    border: 1px solid ${p => p.theme.colors.primary};
-    border-radius: 1rem;
-
-    padding: 1rem;
-    margin: 1rem;
+        "title" auto
+        "desc" auto
+        / auto;
 
     gap: 0.5rem;
 
     img {
         grid-area: thumb;
-        width: 4rem;
-        height: 4rem;
+        width: 5rem;
+        height: 5rem;
+        object-fit: cover;
+        padding: 0.5rem;
+
+        float: left;
     }
 
     a {
@@ -119,24 +125,76 @@ const ExternalEmbedDiv = styled.div`
     }
 `;
 
+const ImageEmbeds2Div = styled.div`
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 0.5rem;
+`;
+
 const PostText = styled.div`
     white-space: pre-wrap;
     word-wrap: break-word;
 `;
 
-const ReplyInfoDiv = styled(Card)`
+const ReplyDividerDiv = styled.div`
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
+
     align-items: center;
-    padding: 1rem;
-    margin: 1rem;
-    border-radius: 1rem;
-
-    font-size: 0.75rem;
-
-    border: 1px solid ${p => p.theme.colors.primary};
 `;
+
+const AuthorName = styled.span`
+    font-weight: bold;
+`;
+
+const AvatarImgRaw = styled.img`
+    border-radius: 2rem;
+`;
+
+const AvatarImg = observer((props: { src?: string }) => {
+    return <AvatarImgRaw width="100%" src={props.src} />;
+});
+
+function RepliedSeperator() {
+    return (
+        <ReplyDividerDiv>
+            <hr style={{ width: "50%" }} />
+            <Flex align="center" gap="1.5rem">
+                <ChatBubbleIcon />
+                <span>Replied</span>
+            </Flex>
+            <hr style={{ width: "50%" }} />
+        </ReplyDividerDiv>
+    );
+}
+
+interface EmbeddedImagesProps {
+    images: { src: string; alt?: string; thumb?: string }[];
+}
+
+export function EmbeddedImages(props: EmbeddedImagesProps) {
+    const { images } = props;
+
+    if (images.length === 0) return null;
+
+    if (images.length === 1) {
+        const image = images[0]!;
+        return <EmbedImg alt={image.alt} src={image.thumb ?? image.src} />;
+    }
+
+    return (
+        <ImageEmbeds2Div>
+            {images.map(image => (
+                <div>
+                    <EmbedImg alt={image.alt} src={image.thumb ?? image.src} />
+                </div>
+            ))}
+        </ImageEmbeds2Div>
+    );
+}
 
 export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
     const { post } = props;
@@ -149,11 +207,16 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
 
     return (
         <RootCard>
-            <ShowRawButton onClick={() => setShowRaw(v => !v)}>
-                <MagnifyingGlassIcon />
-            </ShowRawButton>
-            {renderRaw()}
-            {renderPost()}
+            {showRaw ? (
+                <>
+                    <Button size="1" onClick={() => setShowRaw(v => !v)}>
+                        Close JSON
+                    </Button>
+                    <JsonViewer json={post} />
+                </>
+            ) : (
+                renderPost()
+            )}
         </RootCard>
     );
 
@@ -172,22 +235,61 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
         return null;
     }
 
-    function renderReply() {
+    function renderRootReply() {
+        const root = post.reply?.root;
+
+        if (post.reply?.root.cid === post.reply?.parent.cid) return null;
+
+        if (AppBskyFeedDefs.isPostView(root)) {
+            if (AppBskyFeedPost.isRecord(root.record)) {
+                return (
+                    <>
+                        <TransparentAvatarWithContentDiv>
+                            <div>
+                                <AvatarImg src={root.author.avatar} />
+                            </div>
+                            <div>
+                                <Flex align="center" gap="0.5rem">
+                                    <AuthorName>{root.author.displayName}</AuthorName>
+                                    <span>{root.author.handle}</span>
+                                </Flex>
+
+                                <PostText>{root.record.text}</PostText>
+                            </div>
+                        </TransparentAvatarWithContentDiv>
+                        <RepliedSeperator />
+                    </>
+                );
+            }
+        }
+
+        return null;
+    }
+
+    function renderParentReply() {
         const parent = post.reply?.parent;
+
         if (AppBskyFeedDefs.isPostView(parent)) {
             if (AppBskyFeedPost.isRecord(parent.record)) {
                 return (
-                    <ReplyInfoDiv>
-                        <UserCard
-                            minimal
-                            did={parent.author.did}
-                            handle={parent.author.handle}
-                            displayName={parent.author.displayName}
-                            avatar={parent.author.avatar}
-                            json={parent.author}
-                        />
-                        <PostText>{parent.record.text}</PostText>
-                    </ReplyInfoDiv>
+                    <>
+                        {renderRootReply()}
+                        <TransparentAvatarWithContentDiv>
+                            <Flex dir="column" gap="1rem">
+                                <AvatarImg src={parent.author.avatar} />
+                            </Flex>
+                            <Flex dir="column" gap="1rem">
+                                <Flex align="center" gap="1rem">
+                                    <AuthorName>{parent.author.displayName}</AuthorName>
+                                    <Link to={`/profile/${parent.author.did}`}>
+                                        @{parent.author.handle}
+                                    </Link>
+                                </Flex>
+                                <PostText>{parent.record.text}</PostText>
+                            </Flex>
+                        </TransparentAvatarWithContentDiv>
+                        <RepliedSeperator />
+                    </>
                 );
             }
         }
@@ -197,12 +299,15 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
 
     function renderImageEmbeds() {
         if (AppBskyEmbedImages.isView(post.post.embed)) {
+            const images = post.post.embed.images;
             return (
-                <div className="flex flex-row gap-2">
-                    {post.post.embed.images.map(i => (
-                        <EmbedImg src={i.thumb} />
-                    ))}
-                </div>
+                <EmbeddedImages
+                    images={images.map(i => ({
+                        src: i.fullsize,
+                        thumb: i.thumb,
+                        alt: i.alt,
+                    }))}
+                />
             );
         }
 
@@ -217,8 +322,8 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
                 if (AppBskyFeedPost.isRecord(emRec.value)) {
                     return (
                         <QuotePostDiv>
-                            <UserCard
-                                minimal
+                            <ProfileView
+                                size="small"
                                 did={emRec.author.did}
                                 handle={emRec.author.handle}
                                 displayName={emRec.author.displayName}
@@ -288,32 +393,35 @@ export const FeedViewPostCard = observer((props: FeedViewPostProps) => {
         );
     }
 
-    function renderRaw() {
-        if (!showRaw) return null;
-
-        return <JsonViewer json={post} />;
-    }
-
     function renderPost() {
-        if (showRaw) return null;
-
         return (
             <PostDiv>
-                {renderRepost()}
-                {renderReply()}
-                <UserCard
-                    minimal
-                    did={author.did}
-                    handle={author.handle}
-                    displayName={author.displayName}
-                    avatar={author.avatar}
-                    json={author}
-                />
-                <PostText>{text}</PostText>
-                {renderImageEmbeds()}
-                {renderExternalEmbeds()}
-                {renderQuotedPost()}
-                {renderFooter()}
+                {renderParentReply()}
+                <AvatarWithContentDiv>
+                    <Flex dir="column" align="center" gap="1rem">
+                        <AvatarImg src={author.avatar} />
+                        <Button size="1" onClick={() => setShowRaw(v => !v)}>
+                            Show Raw
+                        </Button>
+                    </Flex>
+
+                    <div>
+                        {renderRepost()}
+
+                        <Flex dir="column" gap="1rem">
+                            <Flex align="center" gap="1rem">
+                                <AuthorName>{author.displayName}</AuthorName>
+
+                                <Link to={`/profile/${author.did}`}>@{author.handle}</Link>
+                            </Flex>
+                            <PostText>{text}</PostText>
+                            {renderImageEmbeds()}
+                            {renderExternalEmbeds()}
+                            {renderQuotedPost()}
+                            {renderFooter()}
+                        </Flex>
+                    </div>
+                </AvatarWithContentDiv>
             </PostDiv>
         );
     }

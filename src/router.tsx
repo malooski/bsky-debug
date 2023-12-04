@@ -18,6 +18,24 @@ export const router = createRouter([
             {
                 path: "/login",
                 element: <LoginPage />,
+                loader: async ({ params }) => {
+                    if (!AUTH_MODEL.loggedInContext) {
+                        console.log("no auth context, attempting to check auth");
+                        try {
+                            console.log("checking auth");
+
+                            await AUTH_MODEL.check();
+
+                            const redirectTo = params["from"] || "/dashboard";
+                            console.log("redirecting to", redirectTo);
+                            return redirect(redirectTo);
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+
+                    return null;
+                },
             },
             {
                 path: "/logout",

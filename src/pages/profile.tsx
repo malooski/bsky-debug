@@ -2,7 +2,7 @@ import { Box, Button, Tabs } from "@radix-ui/themes";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react";
 import { FeedViewPostCard } from "../components/FeedViewPost";
-import { UserCard } from "../components/UserCard";
+import { UserCard } from "../components/Profile";
 import { AUTH_MODEL } from "../models/auth";
 import styled from "styled-components";
 import { Navigate, useParams } from "react-router-dom";
